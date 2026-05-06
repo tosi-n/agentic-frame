@@ -1,0 +1,16 @@
+{
+  "name": "agentic-frame",
+  "version": "0.1.0",
+  "description": "Agentic Frame — video editing skill powered by HybrIE.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Video Edit (HybrIE)",
+    "category": "Media",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "Cut these takes into a 60-second product demo",
+      "Build a launch video from this folder of footage",
+      "Add captions to this voiceover and color-grade it"
+    ]
+  }
+}
