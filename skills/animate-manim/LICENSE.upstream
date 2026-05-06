@@ -1,0 +1,29 @@
+Upstream attribution
+====================
+
+The reference documentation under `references/` and the setup script under
+`scripts/setup.sh` in this sub-skill are vendored verbatim from the
+`manim-video` sub-skill of the `browser-use/video-use` project.
+
+Source:
+    https://github.com/browser-use/video-use
+    Path:   skills/manim-video/
+    Cloned: 2026-05-06
+
+The upstream README (`README.md` at the repo root) describes the project as
+"100% open source." However, at the time of vendoring no formal `LICENSE`,
+`COPYING`, or `NOTICE` file was present in the upstream repository, and
+`pyproject.toml` did not declare an SPDX identifier. We therefore cannot
+assert a specific license (e.g. MIT) for these vendored files on the
+upstream's behalf.
+
+Action for downstream users / redistributors:
+- Treat the vendored content as "all rights reserved by the original
+  authors" until upstream publishes an explicit license, and consult the
+  current state of https://github.com/browser-use/video-use before
+  redistribution outside this skill bundle.
+- New files added in this sub-skill (SKILL.md, install.md, pyproject.toml,
+  this file) follow the license of the parent `agentic-frame` project.
+
+If the upstream adds a LICENSE file, replace the contents of this file with
+that license verbatim and update the attribution paragraph in `SKILL.md`.

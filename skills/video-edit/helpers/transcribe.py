@@ -3,6 +3,10 @@
 Pipeline:
   ffmpeg → mono 16 kHz WAV (temp) → HybrIE /v1/audio/transcriptions
   (verbose_json, segment granularity) → cache to <edit>/transcripts/<stem>.json
+
+HybrIE v0.1.28 additions exposed via flags:
+  --prompt <str>       biases Whisper decoding toward proper nouns / jargon
+  --word-timestamps    request word-level timestamps (DTW alignment)
 """
 from __future__ import annotations
 
@@ -41,6 +45,8 @@ def transcribe_video(
     model: str | None = None,
     language: str | None = None,
     force: bool = False,
+    prompt: str | None = None,
+    word_timestamps: bool = False,
 ) -> Path:
     """Returns the path to the cached transcript JSON."""
     _check_tools()
@@ -67,7 +73,12 @@ def transcribe_video(
         with tempfile.TemporaryDirectory() as tmp:
             wav = extract_audio(video, Path(tmp) / f"{video.stem}.wav")
             payload = client.transcribe(
-                wav, model=model, language=language, response_format="verbose_json"
+                wav,
+                model=model,
+                language=language,
+                response_format="verbose_json",
+                prompt=prompt,
+                word_timestamps=word_timestamps,
             )
     finally:
         if own_client:
@@ -86,11 +97,21 @@ def main() -> int:
     p.add_argument("--model", default=None)
     p.add_argument("--language", default=None)
     p.add_argument("--force", action="store_true")
+    p.add_argument("--prompt", default=None,
+                   help="bias Whisper decoding toward these terms (proper nouns, jargon)")
+    p.add_argument("--word-timestamps", action="store_true",
+                   help="request word-level timestamps (HybrIE v0.1.28+ DTW alignment)")
     args = p.parse_args()
 
     edit_dir = args.edit_dir or args.video.parent / "edit"
     cache = transcribe_video(
-        args.video, edit_dir, model=args.model, language=args.language, force=args.force
+        args.video,
+        edit_dir,
+        model=args.model,
+        language=args.language,
+        force=args.force,
+        prompt=args.prompt,
+        word_timestamps=args.word_timestamps,
     )
     print(cache)
     return 0

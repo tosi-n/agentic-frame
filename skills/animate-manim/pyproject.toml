@@ -1,0 +1,15 @@
+[project]
+name = "animate-manim"
+version = "0.1.0"
+description = "Manim animation overlay author — sibling sub-skill to video-edit."
+requires-python = ">=3.10"
+dependencies = [
+    "manim",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []

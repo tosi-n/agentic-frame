@@ -46,10 +46,11 @@ R3  30 ms audio fades at every cut boundary (no audible pops).
 R4  Overlays use setpts=PTS-STARTPTS+T/TB (don't show middle of an animation).
 R5  Master SRT uses output-timeline offsets (captions don't drift after concat).
 R7  Pad cut edges 100–300 ms (default 150 ms; Whisper segment timestamps drift).
-R8  HybrIE STT request always sends `response_format=verbose_json`,
-    `timestamp_granularities=segment`. Word-level timestamps are NOT supported
-    by HybrIE v0.1.27 native Whisper (rejected at
-    hybrie-server/src/audio/mod.rs:196).
+    Drops to 30–200 ms when the source was transcribed with `--word-timestamps`
+    (HybrIE v0.1.28 DTW alignment is tighter than segment endpoints).
+R8  HybrIE STT request always sends `response_format=verbose_json`. Segment
+    granularity is the default; word-level timestamps are opt-in via
+    `transcribe.py --word-timestamps` (HybrIE v0.1.28+ pure-Rust DTW).
 R9  Cache transcripts per source — `<edit>/transcripts/<stem>.json`.
 R12 All session outputs in `<videos_dir>/edit/`.
 R13 `hybrie_client.health()` before any work; fail loudly with install hint if
@@ -58,9 +59,10 @@ R13 `hybrie_client.health()` before any work; fail loudly with install hint if
 
 **Agent-enforced** (you check these — nothing else will):
 ```
-R6  Cuts only at HybrIE segment boundaries — never propose a cut at a time the
-    transcript doesn't anchor. The renderer accepts any (start, end) you give
-    it; landing on segment edges is your discipline.
+R6  Cuts at word boundaries when the source was transcribed with
+    `--word-timestamps`; otherwise segment boundaries. Never propose a cut at a
+    time the transcript doesn't anchor. The renderer accepts any (start, end)
+    you give it; landing on a transcript-anchored edge is your discipline.
 R10 Run animation generation in parallel sub-agents — the renderer is agnostic.
 R11 Confirm strategy with the user before invoking render.py.
 ```
@@ -71,7 +73,7 @@ R11 Confirm strategy with the user before invoking render.py.
 1. transcribe_batch.py     →  edit/transcripts/*.json     (cached, R9, R13)
 2. pack_transcripts.py     →  edit/takes_packed.md        (you read this)
 3. You propose strategy    →  user confirms               (R11)
-4. You write EDL JSON      →  edit/edl.json               (segment-level cuts, R6)
+4. You write EDL JSON      →  edit/edl.json               (transcript-anchored cuts, R6)
 5. timeline_view.py        →  PNGs at decision points     (use sparingly)
 6. (optional) animation
    sub-agents in parallel  →  edit/animations/slot_*/*.mp4 (R10)
@@ -119,13 +121,31 @@ The single artifact between you and `render.py`. JSON, written to `edit/edl.json
 }
 ```
 
-- `start` / `end` MUST land on segment boundaries from the packed transcript (R6).
+- `start` / `end` MUST land on a boundary present in the packed transcript:
+  word boundaries when the source was transcribed with `--word-timestamps`,
+  segment boundaries otherwise (R6).
 - `grade` per range overrides the EDL-level `grade`. Accepts a preset name,
   `"auto"`, or a raw ffmpeg filter string. Presets: `none`, `subtle`,
   `neutral_punch`, `warm_cinematic`.
 - `subtitles` is optional. If omitted and `--transcripts-dir` is passed to
   render.py, a `master.srt` is generated automatically.
 - `overlays[*].start_in_output` is **output-timeline** seconds, not source.
+
+### Confidence flags (HybrIE v0.1.28+)
+
+`pack_transcripts.py` prefixes a phrase line with `?` when HybrIE's
+verbose_json reports `no_speech_prob > 0.6` AND `avg_logprob < -1.0` (likely
+hallucination), or `compression_ratio > 2.4` (repetitive-token failure).
+Before quoting a `?`-flagged segment in an EDL, sample it with
+`timeline_view.py` (or your native vision) and confirm the speech is real and
+the text matches. Flagged ranges are not forbidden — just verify.
+
+### Prompt conditioning (HybrIE v0.1.28+)
+
+For technical or proper-noun-heavy footage, pass `--prompt` to
+`transcribe.py` to bias Whisper decoding toward the right spelling.
+Example: `transcribe.py demo.mp4 --prompt "HybrIE, Nebius, Qwen, ffmpeg"`.
+Cuts and quotes downstream then read cleanly without manual fix-up.
 
 ## HybrIE configuration
 
@@ -154,8 +174,8 @@ with this brief:
 > You are an editor working on a {DURATION}-second {GENRE} video.
 > The packed transcript is below. Pick the best take of each beat. Output ONLY
 > a valid EDL JSON. Hard requirements:
-> - cuts must land on segment boundaries (start/end times must appear in the
->   transcript)
+> - cuts must land on a transcript-anchored boundary (segment edges by default;
+>   word edges if the packed transcript shows per-word lines)
 > - never repeat content unless intentional
 > - reason field on every range, ≤ 12 words
 > - `total_duration_s` must match `sum(end - start)` to within 0.5 s
@@ -176,6 +196,13 @@ Each sub-agent gets:
 
 The renderer is agnostic to the tool the sub-agent uses (Manim, Remotion,
 After Effects export, Hyperframes, plain CSS). It just consumes an .mp4.
+
+For Manim overlays specifically, delegate to the sibling `animate-manim`
+sub-skill (`skills/animate-manim/`). Hand it a brief — `output_path`,
+`duration_s`, `resolution`, `transparent` flag, palette, copy, motion, and
+the required `end_frame` — and it returns a deterministic render at that
+path. You then register the file as an `EdlOverlay`
+(`file=output_path, start_in_output=..., duration=duration_s`).
 
 ## Subtitle style
 
@@ -209,6 +236,12 @@ unless the user asks for a different platform.
   helper hangs at the first STT call until the multipart upload times out.
 - Re-running `render.py` after a tiny copy edit and re-transcribing. R9 says
   the transcript is cached. The expensive step is STT; the EDL is cheap.
+- Quoting a `?`-flagged segment from `takes_packed.md` without verifying.
+  The flag means HybrIE's own confidence metrics suspect a hallucination or
+  repetitive-token failure — sample the timestamp before trusting the text.
+- Skipping `--prompt` on jargon-heavy footage and then hand-correcting every
+  proper-noun typo in the EDL `quote` fields. One prompt at transcribe time
+  fixes the whole batch.
 
 ## Worked example — 60-second product demo from a folder
 

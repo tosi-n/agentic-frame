@@ -1,8 +1,14 @@
-"""Thin HTTP client for HybrIE v0.1.27.
+"""Thin HTTP client for HybrIE v0.1.28.
 
 STT runs locally (HybrIE native Whisper). LLM defaults to local. VLM is cloud-only
-in v0.1.27 — `x-hybrie-cloud-provider: hybrie` resolves to Nebius
+— `x-hybrie-cloud-provider: hybrie` resolves to Nebius
 (https://api.studio.nebius.ai/v1) per hybrie-server/src/inference_api.rs:61.
+
+v0.1.28 STT additions surfaced here:
+  - word-level timestamps (pure-Rust DTW) via ``word_timestamps=True``
+  - prompt conditioning (``prompt=...``) to bias decoding toward proper nouns
+  - segment confidence (``avg_logprob``, ``no_speech_prob``, ``compression_ratio``)
+    flow through verbose_json automatically — no API change required here.
 
 The agent should reach for its own vision first when it has multimodal capability;
 this client's vision() is the fallback path for text-only runtimes.
@@ -94,12 +100,18 @@ class HybrieClient:
         language: str | None = None,
         response_format: str = "verbose_json",
         temperature: float | None = None,
+        prompt: str | None = None,
+        word_timestamps: bool = False,
     ) -> dict[str, Any]:
         """Multipart POST /v1/audio/transcriptions.
 
-        Native Whisper backend rejects word-level timestamps
-        (hybrie-server/src/audio/mod.rs:196), so we always request
-        ``timestamp_granularities[]=segment``.
+        Always requests ``timestamp_granularities[]=segment``. When
+        ``word_timestamps=True`` (HybrIE v0.1.28+), additionally requests
+        ``timestamp_granularities[]=word`` so the response carries a populated
+        ``words: [{word, start, end}]`` array via DTW alignment.
+
+        ``prompt`` (v0.1.28+) biases Whisper decoding toward the supplied
+        free-text — useful for proper nouns, project names, jargon.
         """
         audio_path = Path(audio_path)
         if not audio_path.is_file():
@@ -112,10 +124,14 @@ class HybrieClient:
             ("response_format", response_format),
             ("timestamp_granularities[]", "segment"),
         ]
+        if word_timestamps:
+            data.append(("timestamp_granularities[]", "word"))
         if language:
             data.append(("language", language))
         if temperature is not None:
             data.append(("temperature", str(temperature)))
+        if prompt:
+            data.append(("prompt", prompt))
 
         r = self._http.post(
             f"{self.base_url}/v1/audio/transcriptions",
