@@ -147,6 +147,30 @@ For technical or proper-noun-heavy footage, pass `--prompt` to
 Example: `transcribe.py demo.mp4 --prompt "HybrIE, Nebius, Qwen, ffmpeg"`.
 Cuts and quotes downstream then read cleanly without manual fix-up.
 
+### Narration / voiceover (HybrIE v0.1.33+)
+
+Local TTS via VibeVoice-1.5B is now part of the skill. `narrate.py`
+turns a script into a 24 kHz mono WAV ready to drop into an EDL as an
+audio overlay (or to mix under existing audio).
+
+```bash
+narrate.py "Welcome to the demo." --out narration.wav
+# or from a multi-line script:
+narrate.py --script narration.md --out vo.wav
+```
+
+The returned WAV is wrapped with the license-required mitigations
+already applied server-side:
+
+- An audible 100 ms triple-tone marker prepended to the audio
+  (identifies the file as AI-generated; required by VibeVoice's MIT
+  carve-out)
+- A `LIST INFO` metadata chunk inside the WAV (`IART`/`ICMT`/`ICRD`/`ITCH`)
+
+Do **not** strip these when post-processing. They're part of the
+redistribution license. If a downstream tool re-encodes, re-apply the
+disclaimer marker (the metadata chunk will not survive re-encode).
+
 ## HybrIE configuration
 
 | Env var | Default | Notes |

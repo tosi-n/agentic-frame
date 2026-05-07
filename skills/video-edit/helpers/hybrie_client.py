@@ -29,6 +29,7 @@ DEFAULT_API_KEY = "hybrie"
 DEFAULT_STT_MODEL = "openai/whisper-large-v3-turbo"
 DEFAULT_LLM_MODEL = "Qwen/Qwen3.5-9B-Instruct"
 DEFAULT_VLM_MODEL_FALLBACK = "Qwen/Qwen2.5-VL-72B-Instruct"
+DEFAULT_TTS_MODEL = "microsoft/VibeVoice-1.5B"
 
 
 class HybrieError(RuntimeError):
@@ -189,6 +190,48 @@ class HybrieClient:
         if isinstance(content, list):
             return "".join(part.get("text", "") for part in content if isinstance(part, dict))
         return content or ""
+
+    # ---- TTS (HybrIE v0.1.32+) ------------------------------------------
+
+    def speech(
+        self,
+        text: str,
+        *,
+        model: str | None = None,
+        response_format: str = "wav",
+        execution_mode: str = "local",
+        cloud_provider: str | None = None,
+    ) -> bytes:
+        """POST /v1/audio/speech and return raw audio bytes.
+
+        ``response_format`` is one of ``wav`` / ``pcm`` (local backend) or
+        ``mp3`` / ``wav`` (cloud backend).
+
+        ``execution_mode='local'`` (HybrIE v0.1.32+) routes to the native
+        VibeVoice path. The returned WAV carries the license-required
+        audible disclaimer tone (~100 ms, prepended) and a metadata
+        watermark in the RIFF ``LIST INFO`` chunk; v0.1.34+ will add a
+        signal-domain watermark on top.
+
+        ``execution_mode='cloud'`` falls through to the configured cloud
+        TTS provider (Runware in current HybrIE).
+        """
+        body: dict[str, Any] = {
+            "model": model or DEFAULT_TTS_MODEL,
+            "input": text,
+            "response_format": response_format,
+        }
+        extra = {"x-hybrie-execution-mode": execution_mode}
+        if cloud_provider:
+            extra["x-hybrie-cloud-provider"] = cloud_provider
+        r = self._http.post(
+            f"{self.base_url}/v1/audio/speech",
+            headers=self._headers({**extra, "Content-Type": "application/json"}),
+            content=json.dumps(body),
+        )
+        if not r.is_success:
+            self._raise(r, "speech")
+        return r.content
 
     # ---- VLM (cloud-only fallback) -------------------------------------
 
