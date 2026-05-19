@@ -57,6 +57,8 @@ See [`SKILL.md`](./SKILL.md) for the full playbook the agent reads, and
 | Edge padding | 30–200 ms | 100–300 ms (segments are coarser) |
 | API costs | per-minute scribe + LLM | local (LLM is your agent host) |
 
-## License
+## Attribution
 
-See repository root.
+The vendored Manim reference material used by the sibling `animate-manim`
+sub-skill keeps its attribution note in
+[`../animate-manim/LICENSE.upstream`](../animate-manim/LICENSE.upstream).

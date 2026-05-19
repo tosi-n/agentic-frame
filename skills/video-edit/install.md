@@ -44,11 +44,17 @@ for the first run.
 
 ## 2. Skill install
 
-Clone agentic-frame and symlink the skill into your agent host:
+Each skill in `agentic-frame` owns its own Python environment. The correct
+bootstrap point is the `video-edit` directory itself, not the repo root.
+
+### Local clone + symlink
+
+Clone agentic-frame, install `video-edit`'s Python deps, then point your agent
+host at the skill directory:
 
 ```bash
-git clone <agentic-frame repo> ~/Developer/agentic-frame
-cd ~/Developer/agentic-frame
+git clone https://github.com/tosi-n/agentic-frame.git ~/Developer/agentic-frame
+cd ~/Developer/agentic-frame/skills/video-edit
 uv sync  # installs httpx, pillow, numpy, librosa
 ```
 
@@ -62,9 +68,30 @@ For Claude Code:
 ln -s ~/Developer/agentic-frame/skills/video-edit ~/.claude/skills/video-edit
 ```
 
-Or install via plugin marketplace:
+### `npx skills add`
+
+If you install the skill files through a skill installer, run the same
+dependency bootstrap from the installed skill directory afterwards:
+
 ```bash
-codex plugin marketplace add <agentic-frame repo> --sparse .codex-plugin --sparse skills
+npx skills add tosi-n/agentic-frame
+
+cd ~/.claude/skills/video-edit   # or ~/.codex/skills/video-edit
+uv sync
+```
+
+If you also plan to render Manim overlays, bootstrap the sibling installed
+skill as well:
+
+```bash
+cd ~/.claude/skills/animate-manim   # or ~/.codex/skills/animate-manim
+uv sync
+```
+
+### Optional plugin marketplace flow
+
+```bash
+codex plugin marketplace add https://github.com/tosi-n/agentic-frame --sparse .codex-plugin --sparse skills
 ```
 
 ## 3. Configure HybrIE access

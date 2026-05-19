@@ -2,6 +2,8 @@
   "name": "agentic-frame",
   "version": "0.1.0",
   "description": "Agentic Frame — video editing skill powered by HybrIE.",
+  "repository": "https://github.com/tosi-n/agentic-frame",
+  "keywords": ["video-edit", "hybrie", "ffmpeg", "captions", "manim"],
   "skills": "./skills/",
   "interface": {
     "displayName": "Video Edit (HybrIE)",

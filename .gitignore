@@ -17,3 +17,6 @@ venv/
 .vscode/
 .idea/
 *.swp
+
+# Local planning scratch files
+tasks/

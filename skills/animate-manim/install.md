@@ -7,6 +7,11 @@ description: Install Manim Community Edition and its system dependencies so the 
 
 This sub-skill renders overlay videos with [Manim Community Edition](https://www.manim.community/). The parent `video-edit` skill already requires `ffmpeg`; this file only adds Manim and LaTeX.
 
+Run the commands below from the `animate-manim` skill directory itself:
+
+- cloned repo: `~/Developer/agentic-frame/skills/animate-manim`
+- installed skill: `~/.claude/skills/animate-manim` or `~/.codex/skills/animate-manim`
+
 ## Prerequisites
 
 - Python 3.10+ (the parent skill already needs this)
@@ -15,11 +20,10 @@ This sub-skill renders overlay videos with [Manim Community Edition](https://www
 
 ## Steps
 
-### 1. Install Manim
+### 1. Install Python dependencies
 
 ```bash
-# Prefer uv if available; fall back to pip.
-command -v uv >/dev/null && uv pip install manim || pip install manim
+uv sync
 ```
 
 Reference docs in `references/` were tested against Manim CE v0.20.x. No version is pinned in `pyproject.toml` so the latest stable release is fine; if you hit an API regression, drop to `manim==0.20.1`.
@@ -46,7 +50,7 @@ A minimal install (`texlive-latex-extra` plus `dvisvgm`) works for most cases bu
 Run the bundled setup check:
 
 ```bash
-bash skills/animate-manim/scripts/setup.sh
+bash scripts/setup.sh
 ```
 
 It checks Python, Manim, `pdflatex`, and `ffmpeg`, printing a green plus or red x for each. All four must pass.
