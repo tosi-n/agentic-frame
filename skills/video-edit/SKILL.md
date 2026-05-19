@@ -31,6 +31,32 @@ your decisions can be about the cut, not the plumbing.
    enforced by `render.py`. Everything aesthetic — pacing, music, palette,
    subtitle style — is your call, shaped by the conversation.
 
+## Preflight
+
+Before touching footage, verify the runtime. Do not assume the host installed
+the prerequisites correctly just because the skill is present.
+
+1. Confirm Python deps import cleanly from this skill directory. If the check
+   fails, stop and tell the user to run `uv sync` here (or run it yourself if
+   your host permits local setup work).
+2. Confirm `ffmpeg` is on `PATH` with `ffmpeg -version`.
+3. Confirm HybrIE is reachable with `HybrieClient().health()`.
+4. If the job will use Manim overlays, confirm the sibling skill is ready
+   before delegating. Run `bash ../animate-manim/scripts/setup.sh` when that
+   relative path exists; otherwise stop and point the user at
+   `skills/animate-manim/install.md`.
+
+Suggested commands:
+
+```bash
+python -c "import httpx, PIL, numpy; print('python deps ok')"
+ffmpeg -version
+python -c "from helpers.hybrie_client import HybrieClient; print(HybrieClient().health())"
+```
+
+If any preflight step fails, do not start transcription or rendering. Fix the
+environment first, then continue.
+
 ## Hard Rules
 
 Code-enforced rules can't be bypassed — they're baked into `render.py` /
@@ -70,11 +96,12 @@ R11 Confirm strategy with the user before invoking render.py.
 ## The pipeline
 
 ```
-1. transcribe_batch.py     →  edit/transcripts/*.json     (cached, R9, R13)
-2. pack_transcripts.py     →  edit/takes_packed.md        (you read this)
-3. You propose strategy    →  user confirms               (R11)
-4. You write EDL JSON      →  edit/edl.json               (transcript-anchored cuts, R6)
-5. timeline_view.py        →  PNGs at decision points     (use sparingly)
+0. preflight              →  deps, ffmpeg, HybrIE, optional Manim ready
+1. transcribe_batch.py    →  edit/transcripts/*.json      (cached, R9, R13)
+2. pack_transcripts.py    →  edit/takes_packed.md         (you read this)
+3. You propose strategy   →  user confirms                (R11)
+4. You write EDL JSON     →  edit/edl.json                (transcript-anchored cuts, R6)
+5. timeline_view.py       →  PNGs at decision points      (use sparingly)
 6. (optional) animation
    sub-agents in parallel  →  edit/animations/slot_*/*.mp4 (R10)
 7. render.py edit/edl.json  →  edit/final.mp4
@@ -270,7 +297,9 @@ unless the user asks for a different platform.
 ## Worked example — 60-second product demo from a folder
 
 ```bash
-# 0. precondition
+# 0. preflight
+python -c "import httpx, PIL, numpy; print('python deps ok')"
+ffmpeg -version
 python -c "from helpers.hybrie_client import HybrieClient; HybrieClient().health()"
 
 # 1. transcribe everything in parallel (cached on second run)

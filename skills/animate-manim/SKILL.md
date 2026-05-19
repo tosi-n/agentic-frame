@@ -34,6 +34,30 @@ class EdlOverlay:
 
 You write the file. The parent decides `start_in_output`. Don't try to influence parent timing — your render starts at frame 0, plays for `duration_s`, ends on the still the parent asked for. R4 in the parent's renderer aligns the rest.
 
+## Preflight
+
+Before writing `script.py`, verify the render toolchain from this skill
+directory. Do not assume `manim`, `ffmpeg`, or `pdflatex` exist just because
+the skill was installed.
+
+1. Run `bash scripts/setup.sh`.
+2. If any check fails, stop and follow `install.md` before attempting a render.
+3. If the brief needs `MathTex` / `Tex`, treat a missing `pdflatex` as a hard
+   blocker, not a warning.
+4. If the output needs transparency, make sure your render command and output
+   container match (`.mov` with alpha), then verify the final file with
+   `ffprobe`.
+
+Suggested commands:
+
+```bash
+bash scripts/setup.sh
+python -c "import manim; print('manim ok')"
+ffprobe -version
+```
+
+If preflight is red, do not render speculatively and hope it works.
+
 ## Hard rules (the 5 that bite first)
 
 The references hold the full craft manual. Internalise these five before writing a line of code:
@@ -68,14 +92,15 @@ LaTeX trap: always raw-string MathTex literals (`MathTex(r"\frac{1}{2}")`). Mobj
 ## Workflow
 
 ```
-brief from parent  →  plan.md  →  script.py  →  manim -qh script.py SceneName -o <output_path>  →  done
+preflight  →  brief from parent  →  plan.md  →  script.py  →  manim -qh script.py SceneName -o <output_path>  →  done
 ```
 
-1. Read the brief. Note `output_path`, `duration_s`, `resolution`, `transparent`, `end_frame`.
-2. (Optional, for multi-beat overlays) Write `plan.md` next to the script — narrative arc, mobjects, color, timing per beat. See `references/scene-planning.md`.
-3. Write `script.py` with **one Scene class**. Sum of all `play(run_time=...)` plus `wait(...)` must equal `duration_s` to within ~50 ms. End on the held still.
-4. Render directly to `output_path`. `manim` writes to `media/videos/script/<quality>/SceneName.mp4` by default; pass `-o` and `--media_dir` (or move the result) so the deliverable lands at the brief's path.
-5. Verify duration with `ffprobe -v error -show_entries format=duration -of csv=p=0 <output_path>`. Re-render if off by more than 100 ms.
+1. Run preflight from this directory. If `scripts/setup.sh` fails, stop and fix the environment first.
+2. Read the brief. Note `output_path`, `duration_s`, `resolution`, `transparent`, `end_frame`.
+3. (Optional, for multi-beat overlays) Write `plan.md` next to the script — narrative arc, mobjects, color, timing per beat. See `references/scene-planning.md`.
+4. Write `script.py` with **one Scene class**. Sum of all `play(run_time=...)` plus `wait(...)` must equal `duration_s` to within ~50 ms. End on the held still.
+5. Render directly to `output_path`. `manim` writes to `media/videos/script/<quality>/SceneName.mp4` by default; pass `-o` and `--media_dir` (or move the result) so the deliverable lands at the brief's path.
+6. Verify duration with `ffprobe -v error -show_entries format=duration -of csv=p=0 <output_path>`. Re-render if off by more than 100 ms.
 
 ## Invocation examples
 
