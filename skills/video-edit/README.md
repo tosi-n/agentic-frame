@@ -34,6 +34,16 @@ python helpers/render.py /path/to/footage/edit/edl.json \
     --transcripts-dir /path/to/footage/edit/transcripts
 ```
 
+Optional playback speed is supported at render time:
+
+```bash
+python helpers/render.py /path/to/footage/edit/edl.json \
+    --out-dir /path/to/footage/edit \
+    --speed 1.25
+```
+
+Supported speeds are `0.25`, `0.5`, `0.75`, `1`, `1.25`, `1.5`, `1.75`, and `2`.
+
 ## Architecture
 
 ```

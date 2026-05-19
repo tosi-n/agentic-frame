@@ -109,6 +109,7 @@ R11 Confirm strategy with the user before invoking render.py.
    ├── concat (lossless, R2)
    ├── build_master_srt (output-timeline offsets, R5)
    ├── build_final_composite (overlays first, subs LAST — R1)
+   ├── apply_playback_speed (optional standard player speed)
    └── apply_loudnorm_two_pass (-14 LUFS / -1 dBTP / LRA 11)
 8. Self-eval via timeline_view.py at each cut boundary, then deliver.
 ```
@@ -144,6 +145,7 @@ The single artifact between you and `render.py`. JSON, written to `edit/edl.json
     }
   ],
   "subtitles": "edit/master.srt",
+  "playback_speed": 1.25,
   "total_duration_s": 87.4
 }
 ```
@@ -157,6 +159,10 @@ The single artifact between you and `render.py`. JSON, written to `edit/edl.json
 - `subtitles` is optional. If omitted and `--transcripts-dir` is passed to
   render.py, a `master.srt` is generated automatically.
 - `overlays[*].start_in_output` is **output-timeline** seconds, not source.
+- `playback_speed` is optional. Allowed values are `0.25`, `0.5`, `0.75`,
+  `1`, `1.25`, `1.5`, `1.75`, and `2`. It is applied after captions/overlays
+  are burned in so visuals and audio stay synced. The CLI `--speed` flag
+  overrides the EDL value.
 
 ### Confidence flags (HybrIE v0.1.28+)
 

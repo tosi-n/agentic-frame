@@ -9,7 +9,8 @@ Pipeline (executed in order):
   2. concat_segments(...)  → lossless `-c copy`, no re-encode
   3. build_master_srt(...) → output-timeline offsets, segment-level
   4. build_final_composite(...) → overlays first, subtitles LAST
-  5. apply_loudnorm_two_pass(...) → -14 LUFS / -1 dBTP / LRA 11
+  5. apply_playback_speed(...) → optional standard player speeds
+  6. apply_loudnorm_two_pass(...) → -14 LUFS / -1 dBTP / LRA 11
 
 Hard rules enforced here in code (the model can't accidentally bypass them):
   R1  Subtitles applied LAST in the filter chain.
@@ -59,6 +60,7 @@ SUB_FORCE_STYLE = (
 
 FADE_DURATION = 0.030  # R3
 DEFAULT_PAD = 0.150    # R7 (between 100 and 300 ms)
+SUPPORTED_PLAYBACK_SPEEDS = {0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}
 
 
 # ---- EDL types -----------------------------------------------------------
@@ -88,6 +90,7 @@ class Edl:
     overlays: list[EdlOverlay] = field(default_factory=list)
     subtitles: Path | None = None
     total_duration_s: float | None = None
+    playback_speed: float = 1.0
 
     @classmethod
     def load(cls, path: Path) -> "Edl":
@@ -119,6 +122,9 @@ class Edl:
             overlays=overlays,
             subtitles=Path(data["subtitles"]) if data.get("subtitles") else None,
             total_duration_s=data.get("total_duration_s"),
+            playback_speed=_parse_playback_speed(
+                data.get("playback_speed", data.get("speed", 1.0))
+            ),
         )
 
 
@@ -128,6 +134,19 @@ def _check_tools() -> None:
     for tool in ("ffmpeg", "ffprobe"):
         if shutil.which(tool) is None:
             raise SystemExit(f"required tool missing: {tool}")
+
+
+def _parse_playback_speed(value: object) -> float:
+    try:
+        speed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "playback_speed must be a supported standard player speed"
+        ) from exc
+    if speed not in SUPPORTED_PLAYBACK_SPEEDS:
+        allowed = ", ".join(f"{s:g}x" for s in sorted(SUPPORTED_PLAYBACK_SPEEDS))
+        raise ValueError(f"unsupported playback_speed {speed:g}x; allowed: {allowed}")
+    return speed
 
 
 def _ffprobe_json(args: list[str]) -> dict:
@@ -149,6 +168,21 @@ def is_hdr_source(video: Path) -> bool:
         if transfer in {"arib-std-b67", "smpte2084", "bt2020-10", "bt2020-12"}:
             return True
     return False
+
+
+def has_audio_stream(video: Path) -> bool:
+    try:
+        info = _ffprobe_json(["-show_streams", "-select_streams", "a", str(video)])
+    except subprocess.CalledProcessError:
+        return False
+    return bool(info.get("streams"))
+
+
+def _atempo_filter(speed: float) -> str:
+    """Build an ffmpeg atempo chain for the supported playback speeds."""
+    if speed == 0.25:
+        return "atempo=0.5,atempo=0.5"
+    return f"atempo={speed:g}"
 
 
 # ---- Stage 1: extract per-segment ----------------------------------------
@@ -349,7 +383,52 @@ def build_final_composite(
     subprocess.run(cmd, check=True)
 
 
-# ---- Stage 5: two-pass loudnorm -----------------------------------------
+# ---- Stage 5: playback speed --------------------------------------------
+
+def apply_playback_speed(src: Path, dst: Path, speed: float) -> None:
+    """Apply whole-output speed after overlays/subtitles are burned in.
+
+    This keeps captions and overlays synced because pixels, audio, and timeline
+    duration are compressed together. Audio uses ffmpeg's atempo; 0.25x is
+    chained as 0.5x + 0.5x because atempo's lower bound is 0.5.
+    """
+    speed = _parse_playback_speed(speed)
+    if speed == 1.0:
+        shutil.copy2(src, dst)
+        return
+
+    setpts = f"setpts=PTS/{speed:g}"
+    if has_audio_stream(src):
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-loglevel", "error", "-i", str(src),
+                "-filter_complex", f"[0:v]{setpts}[v];[0:a]{_atempo_filter(speed)}[a]",
+                "-map", "[v]", "-map", "[a]",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+                "-movflags", "+faststart",
+                str(dst),
+            ],
+            check=True,
+        )
+        return
+
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-loglevel", "error", "-i", str(src),
+            "-vf", setpts,
+            "-an",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+            str(dst),
+        ],
+        check=True,
+    )
+
+
+# ---- Stage 6: two-pass loudnorm -----------------------------------------
 
 _LOUDNORM_TARGET = "I=-14:TP=-1:LRA=11"
 
@@ -402,9 +481,13 @@ def render(
     transcripts_dir: Path | None = None,
     no_loudnorm: bool = False,
     pad: float = DEFAULT_PAD,
+    speed: float | None = None,
 ) -> Path:
     _check_tools()
     edl = Edl.load(edl_path)
+    playback_speed = _parse_playback_speed(
+        speed if speed is not None else edl.playback_speed
+    )
     qcfg = QUALITY_PRESETS[quality]
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -428,11 +511,14 @@ def render(
         composite = work / "composite.mp4"
         build_final_composite(base, edl.overlays, srt, composite)
 
+        timed = work / "timed.mp4"
+        apply_playback_speed(composite, timed, playback_speed)
+
         final = out_dir / "final.mp4"
         if no_loudnorm:
-            shutil.copy2(composite, final)
+            shutil.copy2(timed, final)
         else:
-            apply_loudnorm_two_pass(composite, final)
+            apply_loudnorm_two_pass(timed, final)
 
     return final
 
@@ -447,6 +533,9 @@ def main() -> int:
     p.add_argument("--no-loudnorm", action="store_true")
     p.add_argument("--pad", type=float, default=DEFAULT_PAD,
                    help="seconds of padding on each cut edge (R7)")
+    p.add_argument("--speed", type=float, choices=sorted(SUPPORTED_PLAYBACK_SPEEDS),
+                   default=None,
+                   help="output playback speed override")
     args = p.parse_args()
 
     final = render(
@@ -456,6 +545,7 @@ def main() -> int:
         transcripts_dir=args.transcripts_dir,
         no_loudnorm=args.no_loudnorm,
         pad=args.pad,
+        speed=args.speed,
     )
     print(final)
     return 0
