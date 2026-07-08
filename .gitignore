@@ -20,3 +20,4 @@ venv/
 
 # Local planning scratch files
 tasks/
+.scratch/
