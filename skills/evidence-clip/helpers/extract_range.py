@@ -18,6 +18,11 @@ import argparse
 import subprocess
 import sys
 
+try:
+    from _ffbin import ffmpeg_exe
+except ImportError:
+    from helpers._ffbin import ffmpeg_exe
+
 FADE_S = 0.03  # 30 ms, mirrors video-edit's R3 hard rule
 
 
@@ -45,7 +50,7 @@ def main():
         afade = f"afade=t=in:st=0:d={FADE_S}"
 
     cmd = [
-        "ffmpeg", "-y",
+        ffmpeg_exe(), "-y",
         "-ss", str(args.start),
         "-i", args.input,
         "-t", str(duration),

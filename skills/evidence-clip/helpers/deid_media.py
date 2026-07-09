@@ -24,6 +24,11 @@ import json
 import subprocess
 import sys
 
+try:
+    from _ffbin import ffmpeg_exe
+except ImportError:
+    from helpers._ffbin import ffmpeg_exe
+
 
 def build_video_filter_complex(face_regions):
     """One overlay stage per region, chained onto the previous overlay's output.
@@ -81,7 +86,7 @@ def main():
             "pass at least one region or range."
         )
 
-    cmd = ["ffmpeg", "-y", "-i", args.input]
+    cmd = [ffmpeg_exe(), "-y", "-i", args.input]
 
     if face_regions:
         filter_complex, final_label = build_video_filter_complex(face_regions)

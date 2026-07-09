@@ -17,16 +17,29 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:
+    from _ffbin import ffmpeg_exe, ffprobe_exe
+except ImportError:
+    from helpers._ffbin import ffmpeg_exe, ffprobe_exe
+
 
 def _check_tools() -> None:
-    for tool in ("ffmpeg", "ffprobe"):
-        if shutil.which(tool) is None:
-            raise SystemExit(f"sample_frames: required tool missing: {tool}")
+    # ffmpeg may be a pip-provisioned bundle (imageio-ffmpeg); ffprobe still
+    # needs a real install. Resolve rather than requiring both on PATH.
+    if ffmpeg_exe() != "ffmpeg" or shutil.which("ffmpeg"):
+        pass
+    elif shutil.which("ffmpeg") is None:
+        raise SystemExit("sample_frames: required tool missing: ffmpeg")
+    if shutil.which("ffprobe") is None and ffprobe_exe() == "ffprobe":
+        raise SystemExit(
+            "sample_frames: ffprobe missing (imageio-ffmpeg bundles ffmpeg only). "
+            "Install a full ffmpeg for frame sampling."
+        )
 
 
 def probe_duration(video: Path) -> float:
     cmd = [
-        "ffprobe", "-v", "error",
+        ffprobe_exe(), "-v", "error",
         "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1",
         str(video),
@@ -48,7 +61,7 @@ def probe_duration(video: Path) -> float:
 
 def probe_dimensions(video: Path) -> tuple[int, int]:
     cmd = [
-        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        ffprobe_exe(), "-v", "error", "-select_streams", "v:0",
         "-show_entries", "stream=width,height",
         "-of", "csv=s=x:p=0",
         str(video),
@@ -66,7 +79,7 @@ def probe_dimensions(video: Path) -> tuple[int, int]:
 
 def extract_frame(video: Path, timestamp_s: float, dst: Path) -> Path:
     cmd = [
-        "ffmpeg", "-y", "-loglevel", "error",
+        ffmpeg_exe(), "-y", "-loglevel", "error",
         "-ss", str(timestamp_s), "-i", str(video),
         "-frames:v", "1", "-q:v", "2", str(dst),
     ]

@@ -21,6 +21,16 @@ The extraction and provenance helpers (`extract_range.py`, `provenance.py`,
 library. `deid_transcript.py` additionally needs `httpx` (installed via
 `pyproject.toml`).
 
+**Sandbox / no-system-ffmpeg environments:** the `brew install ffmpeg` above is
+for a dev machine. When this skill is imported into a code-runtime sandbox that
+has no system ffmpeg, it self-provisions: `imageio-ffmpeg` is declared in
+`pyproject.toml`, the platform pip-installs a skill's declared dependencies
+before running it, and `helpers/_ffbin.py` resolves the bundled ffmpeg binary
+automatically. The ffmpeg-based helpers (`extract_range.py`, `deid_media.py`)
+work with no manual install. `sample_frames.py` additionally needs `ffprobe`,
+which `imageio-ffmpeg` does not bundle -- so frame sampling still wants a full
+ffmpeg on a dev machine.
+
 ## 1. Skill install
 
 ### Local clone + symlink
