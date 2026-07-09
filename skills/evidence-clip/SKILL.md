@@ -22,10 +22,16 @@ skill:
   Stimulir today (verified directly against the HybrIE source). This
   helper only PAINTS OVER regions / MUTES ranges the AGENT supplies
   explicitly -- it never detects anything itself. An agent using this
-  skill must get face/mute coordinates from its own vision reasoning (or a
-  `describe_scenes`-style pass) and from diffing transcript text
-  before/after `deid_transcript.py`, mapped onto Whisper word-level
-  timestamps if available.
+  skill must get face/mute coordinates from its own vision reasoning over
+  frames from `sample_frames.py` (see "Redaction region review" below) and
+  from diffing transcript text before/after `deid_transcript.py`, mapped
+  onto Whisper word-level timestamps if available.
+- **This is a deliberate design, not a gap waiting on a model.** Real
+  video-edit usage (placement of logos, captions, and safe-zone crops)
+  is done this exact way today: render candidate frames, look at them,
+  pick coordinates, iterate. A dedicated detector only earns its cost for
+  a *different* product -- unattended, at-scale redaction where nobody
+  ever reviews a frame before it ships. That's not this skill.
 
 ## Preflight
 
@@ -48,6 +54,7 @@ API key.
 | Chain-of-custody sidecar | Self-contained, pure function of file bytes + caller-supplied timestamp |
 | Transcript PII redaction | Real hosted call to Stimulir's `/api/v1/privacy/deidentify` -- needs `STIMULIR_API_KEY` and network access |
 | Face/plate blur, audio mute | Self-contained ffmpeg execution -- but **zero detection**. Coordinates/ranges must come from the agent, not this skill |
+| Sample candidate frames for the agent to review | Self-contained, pure ffmpeg -- produces frames + pixel dimensions, not regions |
 | Face detection / plate detection / speaker diarization | **Does not exist anywhere in this skill, HybrIE, or Stimulir.** Not a missing flag -- there is no upstream model to call |
 
 ## The workflow
@@ -86,10 +93,10 @@ system clock; the agent (or the tool orchestrating the agent) supplies the
 timestamp. sha256 hashing is a pure function of file bytes, so it's exempt
 from the repo's "no clocks in helpers" rule.
 
-The other three helpers (`extract_range.py`, `deid_transcript.py`,
-`deid_media.py`) never write to the sidecar themselves. They stay dumb on
-purpose -- the agent is the one who decides when a step is worth recording,
-and calls `provenance.py` explicitly.
+The other helpers (`extract_range.py`, `deid_transcript.py`,
+`sample_frames.py`, `deid_media.py`) never write to the sidecar themselves.
+They stay dumb on purpose -- the agent is the one who decides when a step
+is worth recording, and calls `provenance.py` explicitly.
 
 ### 3. (Optional) De-identify the transcript
 
@@ -112,7 +119,29 @@ the original text against the redacted text to find what changed, then map
 those spans onto Whisper word-level timestamps (if the transcript has
 them) to get seconds, and pass that to `--mute-ranges` below.
 
-### 4. (Optional) De-identify the media
+### 4. (Optional) Redaction region review -- sample frames, don't detect
+
+```bash
+python helpers/sample_frames.py <input> --out-dir <frames/> \
+  --interval-seconds 5
+# or, to re-check one moment at finer granularity:
+python helpers/sample_frames.py <input> --out-dir <frames/> \
+  --timestamps "8.4,8.8,9.1"
+```
+
+Writes JPEG frames to `--out-dir` plus a JSON manifest (`{"source", "width",
+"height", "frames": [{"timestamp_s", "path"}, ...]}`) to `--manifest-out` or
+stdout. **This produces frames, not regions.** The agent looks at each
+frame directly (native vision on the image file) and works out
+`--face-regions` pixel boxes itself, using the manifest's `width`/`height`
+as the coordinate space. This is the same render-review-adjust loop real
+video-edit sessions already use for logo/caption/crop placement -- applied
+here to picking redaction boxes instead of overlay positions. Start with a
+coarse `--interval-seconds` pass; re-sample a narrower `--timestamps` range
+around anything that needs a tighter box or a moving target across
+several frames.
+
+### 5. (Optional) De-identify the media
 
 ```bash
 python helpers/deid_media.py <input> --out <deid.mp4> \
@@ -139,6 +168,15 @@ when `--mute-ranges` is given (`-c:a copy` otherwise) -- and when video is
 filtered, `-map 0:a` is added explicitly so the audio stream isn't dropped
 by the filter_complex `-map`.
 
+**Upgrade path, if it's ever needed:** `deid_media.py`'s interface is
+already decoupled from where regions come from -- it takes explicit
+`--face-regions`, full stop. If a real detector ever ships behind a
+hosted endpoint, region generation becomes an API call instead of an
+agent frame-review pass; this helper's filter-graph logic doesn't change
+at all. Don't build that endpoint speculatively -- there is no product
+need for it today, and adding one is a Rust/HybrIE-side decision, not
+something this skill should anticipate.
+
 ## Anti-patterns (do NOT do)
 
 - **Claiming or implying `deid_media.py` performs its own face/speaker
@@ -161,5 +199,10 @@ by the filter_complex `-map`.
   a local fallback. There isn't one -- this is a real hosted call, not an
   optional enhancement.
 - Passing overlapping or out-of-frame `--face-regions` coordinates without
-  checking them against the source resolution first (`ffprobe` the input).
-  ffmpeg will either error or silently blur the wrong area.
+  checking them against the source resolution first (`ffprobe` the input,
+  or read `width`/`height` off `sample_frames.py`'s manifest -- it's the
+  same number).
+- **Claiming or implying `sample_frames.py` detects, tracks, or identifies
+  anything.** It samples frames to JPEG and reports pixel dimensions,
+  nothing more. Region selection is the agent's own vision reasoning over
+  those frames, every time.

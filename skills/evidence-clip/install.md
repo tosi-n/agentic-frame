@@ -17,8 +17,9 @@ pip install "httpx>=0.27"
 ```
 
 The extraction and provenance helpers (`extract_range.py`, `provenance.py`,
-`deid_media.py`) use only ffmpeg and the Python standard library.
-`deid_transcript.py` additionally needs `httpx` (installed via `pyproject.toml`).
+`sample_frames.py`, `deid_media.py`) use only ffmpeg and the Python standard
+library. `deid_transcript.py` additionally needs `httpx` (installed via
+`pyproject.toml`).
 
 ## 1. Skill install
 
@@ -98,6 +99,9 @@ to step 2 -- there is no local fallback for this call.
 - `deid_media.py` needs no key and no network -- it's pure ffmpeg. But it
   also does no detection of any kind (see `SKILL.md`); don't expect it to
   find faces or speakers on its own.
+- `sample_frames.py` is the same: no key, no network, pure ffmpeg. It only
+  produces frames and pixel dimensions for the agent to look at -- it does
+  not decide what's in them.
 - Corporate/offline environments that cannot reach `STIMULIR_API_URL` can
   still use extraction, provenance, and media painting/muting fully --
   only the transcript PII scrub step is blocked without network access.

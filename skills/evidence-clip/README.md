@@ -41,12 +41,16 @@ python helpers/provenance.py clip.provenance.json \
 export STIMULIR_API_KEY=hyb_...
 python helpers/deid_transcript.py clip_transcript.json --out clip_transcript.redacted.txt
 
-# 4. (optional) blur agent-identified faces / mute agent-identified ranges
+# 4. (optional) sample frames for the agent to look at and pick regions from --
+#    this produces frames, not regions; there is no detector behind it
+python helpers/sample_frames.py clip.mp4 --out-dir clip_frames/ --interval-seconds 5
+
+# 5. (optional) blur agent-identified faces / mute agent-identified ranges
 python helpers/deid_media.py clip.mp4 --out clip.deid.mp4 \
   --face-regions '[{"t_start":1.2,"t_end":4.0,"x":120,"y":80,"w":150,"h":150}]' \
   --mute-ranges '[[8.4, 9.1]]'
 
-# 5. record the deid step too
+# 6. record the deid step too
 python helpers/provenance.py clip.provenance.json \
   --op deid_media --tool deid_media.py \
   --at 2026-07-08T12:05:00Z \
