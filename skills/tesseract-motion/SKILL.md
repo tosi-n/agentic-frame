@@ -11,6 +11,8 @@ The CLI may send basic usage telemetry for some commands. You can provide option
 
 Create a moving composition with a clear visual idea. Establish what the motion communicates, its rhythm, the destination canvas, and whether this is a full scene or an overlay that must leave footage visible.
 
+For generated source media, use the live Stimulir catalog and [media-generate](../media-generate/SKILL.md): catalogued GPT Image or Gemini image models for stills, ready LTX video deployments for footage, ACE-Step or Stable Audio for music and sound, and Stimulir speech or scoped Qwen reference-voice TTS when narration is needed. Match the model to its actual enabled route and deployment capabilities. The separately installed `dreamina-canvas-cli` skill can supplement this with Canvas-led image, video, or audio generation, including reference workflows absent from the ready Stimulir route. Follow its live catalog/schema and record the exported asset and model. Generated footage or stills are source layers; keep motion text, shapes, masks, timing, and audio editable in Tesseract.
+
 When designing an ad opening, read [ad hooks](references/ad-hooks.md): develop a clear visual idea tied to the actual product/message, align its key arrival to confirmed opening music cues when available, and preview it together with the next scene. Sound and transitions strengthen the idea; they are not a required effects stack.
 
 1. Resolve this skill's root from the directory containing this `SKILL.md`. Read [CLI installation](references/installation.md) and check the required Tesseract version once per session. Use the resolved executable path throughout the task. Read [local operation](references/local-operation.md) and [native authoring](references/native-authoring.md).

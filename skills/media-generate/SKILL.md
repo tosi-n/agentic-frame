@@ -5,7 +5,7 @@ description: Generate speech, reference-voice speech, music, sound, or native vi
 
 # Stimulir media generation
 
-Use this skill when the task needs native Stimulir media models. `helpers/stimulir_media.py` is a standard-library client for the verified HybrIE durable job API. It requires an operator-provided HybrIE bearer key and exact business profile and pool IDs; it is not a customer Console gateway API. Never place that key in task artifacts or skill text. Discover deployments first and submit only to a ready deployment whose capabilities and limits fit the request.
+Use this skill when the task needs native Stimulir media models. `helpers/stimulir_media.py` is a standard-library client for the verified HybrIE durable job API. It requires an operator-provided HybrIE bearer key and exact business profile and pool IDs; it is not a customer Console gateway API. Never place that key in task artifacts or skill text. Discover deployments first and submit only to a ready deployment whose capabilities and limits fit the request. The table records verified resident examples, not the entire or permanent model inventory; use all currently accessible Stimulir models that fit the requested output and their documented routes.
 
 | Output | Verified resident model | Job request |
 |---|---|---|
@@ -18,4 +18,4 @@ The audio worker accepts ACE 10–60 seconds and Stable Audio 1–60 seconds. Va
 
 Use a stable UUID for each submitted job and retain it in the task artifact. Retrying the same UUID with the same body is idempotent. Poll the exact deployment, download the terminal artifact, then inspect it. A queued or running state is not a completed render. Keep generated WAV/MP4, prompt, model identity, deployment revision, and request ID in durable task artifacts. A missing ready deployment or scope is a blocked generation, not permission to switch to an unapproved vendor.
 
-For Seedance 2.5 video, use the `ugc-video` Dreamina route and its live CLI catalog; this native Stimulir video route serves LTX-2.5.
+For Seedance 2.5 reference-driven video, `ugc-video` describes the supplemental Dreamina Canvas route; this native Stimulir video route has a verified LTX-2.5 worker.

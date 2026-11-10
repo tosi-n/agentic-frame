@@ -31,6 +31,11 @@ class StaticAdTests(unittest.TestCase):
             with patch.dict(generate.os.environ, {"STIMULIR_IMAGE_MODEL": "gpt-image-2"}):
                 result = generate.load_requests(Path(folder))
             self.assertEqual(result[0][1]["model"], "gpt-image-2")
+            path.write_text(json.dumps({"prompt": "A clear product ad", "model": "gemini-3-pro-image-preview", "aspect_ratio": "4:5", "image_size": "2K"}))
+            self.assertEqual(generate.load_requests(Path(folder))[0][1]["aspect_ratio"], "4:5")
+            path.write_text(json.dumps({"prompt": "A clear product ad", "model": "gemini-3-pro-image-preview", "quality": "high"}))
+            with self.assertRaises(ValueError):
+                generate.load_requests(Path(folder))
             path.write_text(json.dumps({"prompt": "A clear product ad", "input_urls": ["https://example.com"]}))
             with self.assertRaises(ValueError):
                 generate.load_requests(Path(folder))
