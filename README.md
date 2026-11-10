@@ -17,6 +17,8 @@ The repo ships these media skills:
 
 The four marketing skills adapt the MIT-licensed [source marketing-skills](https://github.com/graphed-inc/marketing-skills). Their upstream license files are kept in the skill directories. Stimulir is the primary media source: Console image and speech gateways plus ready scoped HybrIE audio and video deployments. Available models depend on the live catalog, grants, and deployment state. A separately installed and authenticated `dreamina-canvas-cli` skill supplements `ugc-video`, `static-ads`, and `tesseract-motion` for Canvas and reference workflows. It is not bundled here. Reference voice cloning is available through a ready, scoped Stimulir Qwen3-TTS native worker, not the public Console TTS route.
 
+For these media skills, read [access and setup](./skills/media-generate/references/access.md) and run the included preflight for the paths used by the task. The static ad generator and scoped native media client are included; Tesseract has its own pinned CLI installer guide. UGC orchestrates those helpers and the existing video editing skills. Dreamina Canvas has a separate CLI and skill installation and login.
+
 ## Install
 
 ### `npx skills add`

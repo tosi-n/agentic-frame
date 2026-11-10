@@ -5,6 +5,8 @@ description: Create on-brand static ads with catalogued Stimulir image models, u
 
 # Static ads with Stimulir
 
+Read [media access and setup](../media-generate/references/access.md), then run its gateway preflight before generating. If using Dreamina Canvas, also run its optional Dreamina check and follow the separately installed companion skill for installation and login. Stimulir CLI OAuth login does not supply the generator's gateway API key.
+
 Adapted from [Graphed marketing-skills static-ads](https://github.com/graphed-inc/marketing-skills/tree/main/skills/static-ads), MIT license. This port uses the Stimulir workspace project and its catalogued image model.
 
 1. Get the brand URL and any approved brand assets. Inspect the site and supplied examples; distinguish observed brand rules from guesses. If the agent has an attached AdRadar connector, use it for public Meta Ad Library evidence. Otherwise use supplied ad examples or explicitly proceed without competitor evidence. Do not claim spend, impressions, or conversion performance from public ads.
