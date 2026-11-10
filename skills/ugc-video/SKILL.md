@@ -5,7 +5,7 @@ description: Turn an approved script and presenter assets into a vertical UGC vi
 
 # UGC video
 
-Before generation, read [media access and setup](../media-generate/references/access.md) and run its preflight for the gateway and any native, Dreamina, or Tesseract paths this job uses. Stimulir CLI OAuth login does not replace a gateway API key or scoped native bearer credential. Use the companion Dreamina skill's installer and device login flow when Dreamina is needed.
+Before generation, read [media access and setup](../media-generate/references/access.md) and run its preflight for the gateway and any native, Dreamina, Tesseract, or FFmpeg paths this job uses. Stimulir CLI OAuth login does not replace a gateway API key or scoped native bearer credential. Use the companion Dreamina skill's installer and device login flow when Dreamina is needed. For still assets, use Stimulir images by default; if the user explicitly requests Codex image generation in a Codex host, use its available image generation skill/tool.
 
 Adapted from [Graphed marketing-skills ugc-video](https://github.com/graphed-inc/marketing-skills/tree/main/skills/ugc-video), MIT license. Its Graphed, fal, and kie calls are not part of this port.
 
