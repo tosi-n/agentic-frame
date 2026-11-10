@@ -74,14 +74,33 @@ def check_tesseract() -> bool:
     return True
 
 
+def check_command(name: str, version_flag: str, setup: str) -> bool:
+    binary = shutil.which(name)
+    if not binary:
+        print(f"{name} is missing; {setup}")
+        return False
+    try:
+        result = subprocess.run([binary, version_flag], capture_output=True, text=True, timeout=15, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        print(f"{name} did not start; {setup}")
+        return False
+    if result.returncode:
+        print(f"{name} version check failed; {setup}")
+        return False
+    print(f"{name} is installed (access and feature support not yet verified).")
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gateway", action="store_true", help="Check Console gateway key presence")
     parser.add_argument("--native", action="store_true", help="Check scoped HybrIE access settings")
     parser.add_argument("--dreamina", action="store_true", help="Check optional Dreamina CLI login")
     parser.add_argument("--tesseract", action="store_true", help="Check Tesseract CLI installation")
+    parser.add_argument("--ffmpeg", action="store_true", help="Check FFmpeg installation")
+    parser.add_argument("--stimulir-cli", action="store_true", help="Check Stimulir CLI installation")
     args = parser.parse_args()
-    if not any((args.gateway, args.native, args.dreamina, args.tesseract)):
+    if not any((args.gateway, args.native, args.dreamina, args.tesseract, args.ffmpeg, args.stimulir_cli)):
         parser.error("select at least one check")
     results = []
     if args.gateway:
@@ -92,6 +111,10 @@ def main() -> int:
         results.append(check_dreamina())
     if args.tesseract:
         results.append(check_tesseract())
+    if args.ffmpeg:
+        results.append(check_command("ffmpeg", "-version", "follow video-edit/install.md"))
+    if args.stimulir_cli:
+        results.append(check_command("stimulir", "--version", "follow the Stimulir connect skill"))
     return 0 if all(results) else 1
 
 

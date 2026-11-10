@@ -5,7 +5,7 @@ description: Create editable motion graphics locally in Tesseract, including ful
 
 # Design motion with Tesseract
 
-Read [media access and setup](../media-generate/references/access.md) and run its Tesseract preflight before editing; add gateway, native, or Dreamina checks only for source media actually being generated. Tesseract itself requires a pinned CLI installation, with no OAuth or API key for local editing.
+Read [media access and setup](../media-generate/references/access.md) and run its Tesseract preflight before editing; add gateway, native, Dreamina, or FFmpeg checks only for paths actually used. Tesseract itself requires a pinned CLI installation, with no OAuth or API key for local editing. For generated stills, use Stimulir images by default; if the user explicitly requests Codex image generation in a Codex host, use its available image generation skill/tool.
 
 For converting files to or from other editing tools, such as Premiere Pro or After Effects, read [conversion](references/conversion.md). When opening shared or older `.tsrct` files, updating tools, or investigating load/render differences, read [versions and compatibility](references/versions.md).
 

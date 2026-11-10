@@ -19,6 +19,8 @@ The four marketing skills adapt the MIT-licensed [source marketing-skills](https
 
 For these media skills, read [access and setup](./skills/media-generate/references/access.md) and run the included preflight for the paths used by the task. The static ad generator and scoped native media client are included; Tesseract has its own pinned CLI installer guide. UGC orchestrates those helpers and the existing video editing skills. Dreamina Canvas has a separate CLI and skill installation and login.
 
+The setup guide also points to the existing FFmpeg installer and separate Stimulir CLI `connect` instructions. Stimulir image models are the default for generated stills; a user can explicitly choose Codex image generation when the skill runs in a Codex host that exposes that capability.
+
 ## Install
 
 ### `npx skills add`
