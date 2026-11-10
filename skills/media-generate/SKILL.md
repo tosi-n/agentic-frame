@@ -5,6 +5,8 @@ description: Generate speech, reference-voice speech, music, sound, or native vi
 
 # Stimulir media generation
 
+Before using a route, read [media access and setup](references/access.md) and run the relevant local preflight. Its presence checks do not establish access; use the live catalog or ready deployment inventory to verify the selected model.
+
 Use this skill when the task needs native Stimulir media models. `helpers/stimulir_media.py` is a standard-library client for the verified HybrIE durable job API. It requires an operator-provided HybrIE bearer key and exact business profile and pool IDs; it is not a customer Console gateway API. Never place that key in task artifacts or skill text. Discover deployments first and submit only to a ready deployment whose capabilities and limits fit the request. The table records verified resident examples, not the entire or permanent model inventory; use all currently accessible Stimulir models that fit the requested output and their documented routes.
 
 | Output | Verified resident model | Job request |
