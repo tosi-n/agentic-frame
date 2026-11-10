@@ -9,13 +9,13 @@ The repo ships these media skills:
 - `clip-capture` — bare-bone screen/webcam/mic recording and trim, `ffmpeg` only, no server or cloud dependency
 - `video-audio-analysis` — transcript + visual scene analysis for a video/audio file already on disk or in remote storage; hosted-capable, no live-hardware dependency
 - `evidence-clip` — extract a sub-range as a standalone artifact with chain-of-custody, plus optional de-identification (real hosted transcript-PII scrub; media redaction is agent-directed, not automatic — see the skill's `SKILL.md`)
-- `static-ads` — develop ad concepts and generate images through the Stimulir image gateway
-- `ugc-video` — produce vertical presenter video with Stimulir speech and Dreamina Seedance 2.5
-- `tesseract-motion` — create editable motion graphics with the Tesseract CLI
+- `static-ads` — develop ad concepts with Stimulir image models and optional Dreamina Canvas iteration
+- `ugc-video` — produce vertical presenter video with Stimulir media models and optional Dreamina Seedance 2.5
+- `tesseract-motion` — create editable motion graphics with the Tesseract CLI and Stimulir-sourced media
 - `post-to-video` — turn a social post into an editable Tesseract video with supplied or Stimulir-generated music
 - `media-generate` — use ready scoped Stimulir Qwen speech, ACE-Step or Stable Audio music, and LTX video workers
 
-The four marketing skills adapt the MIT-licensed [source marketing-skills](https://github.com/graphed-inc/marketing-skills). Their upstream license files are kept in the skill directories. Runtime research and generation use Stimulir; Seedance 2.5 video uses Dreamina. `static-ads` needs a Stimulir gateway key and an enabled image model. `ugc-video` needs the Dreamina Canvas CLI plus Stimulir speech. Reference voice cloning is available through a ready, scoped Stimulir Qwen3-TTS native worker, not the public Console TTS route.
+The four marketing skills adapt the MIT-licensed [source marketing-skills](https://github.com/graphed-inc/marketing-skills). Their upstream license files are kept in the skill directories. Stimulir is the primary media source: Console image and speech gateways plus ready scoped HybrIE audio and video deployments. Available models depend on the live catalog, grants, and deployment state. A separately installed and authenticated `dreamina-canvas-cli` skill supplements `ugc-video`, `static-ads`, and `tesseract-motion` for Canvas and reference workflows. It is not bundled here. Reference voice cloning is available through a ready, scoped Stimulir Qwen3-TTS native worker, not the public Console TTS route.
 
 ## Install
 

@@ -9,7 +9,9 @@ import os
 from pathlib import Path
 from urllib import error, request
 
-ALLOWED = {"prompt", "model", "size", "quality"}
+COMMON = {"prompt", "model"}
+OPENAI_OPTIONS = {"size", "quality", "background", "output_format", "output_compression", "moderation"}
+GEMINI_OPTIONS = {"aspect_ratio", "image_size"}
 EXTENSIONS = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
 
 
@@ -20,16 +22,25 @@ def load_requests(folder: Path) -> list[tuple[Path, dict[str, str]]]:
     result = []
     for path in files:
         body = json.loads(path.read_text())
-        if not isinstance(body, dict) or set(body) - ALLOWED:
+        if not isinstance(body, dict):
             raise ValueError(f"{path.name}: unsupported request fields")
         if not isinstance(body.get("prompt"), str) or not body["prompt"].strip():
             raise ValueError(f"{path.name}: prompt is required")
         if len(body["prompt"]) > 32000:
             raise ValueError(f"{path.name}: prompt exceeds gateway limit")
-        for key in ("model", "size", "quality"):
+        body.setdefault("model", os.getenv("STIMULIR_IMAGE_MODEL", ""))
+        model = body["model"]
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError(f"{path.name}: model or STIMULIR_IMAGE_MODEL is required")
+        bare_model = model.split("/", 1)[-1]
+        options = OPENAI_OPTIONS if bare_model.startswith("gpt-image-") else GEMINI_OPTIONS if bare_model.startswith("gemini-") and "image" in bare_model else None
+        if options is None or set(body) - COMMON - options:
+            raise ValueError(f"{path.name}: unsupported model or request fields")
+        for key in options - {"output_compression"}:
             if key in body and (not isinstance(body[key], str) or not body[key]):
                 raise ValueError(f"{path.name}: invalid {key}")
-        body.setdefault("model", os.getenv("STIMULIR_IMAGE_MODEL", "gpt-image-2"))
+        if "output_compression" in body and (not isinstance(body["output_compression"], int) or isinstance(body["output_compression"], bool)):
+            raise ValueError(f"{path.name}: invalid output_compression")
         result.append((path, body))
     return result
 
