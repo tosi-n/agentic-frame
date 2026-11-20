@@ -4,6 +4,7 @@ Installable media-production skills for coding agents.
 
 The repo ships these media skills:
 
+- `daily-content` — coordinate evidence-backed daily content, existing production skills, available publishing connectors, and owned performance feedback
 - `video-edit` — transcript-first video editing powered by HybrIE, with `ffmpeg` for deterministic rendering
 - `animate-manim` — Manim overlay rendering used by `video-edit` when an edit needs motion graphics
 - `clip-capture` — bare-bone screen/webcam/mic recording and trim, `ffmpeg` only, no server or cloud dependency
@@ -14,6 +15,8 @@ The repo ships these media skills:
 - `tesseract-motion` — create editable motion graphics with the Tesseract CLI and Stimulir-sourced media
 - `post-to-video` — turn a social post into an editable Tesseract video with supplied or Stimulir-generated music
 - `media-generate` — use ready scoped Stimulir Qwen speech, ACE-Step or Stable Audio music, and LTX video workers
+
+`daily-content` keeps goals, offers and campaign history in each product's own context. Its optional research companion is [`content-trend-research`](https://github.com/stimulir/managed-skills/tree/main/skills/content-trend-research), a separate managed-skills package for Treg-first post discovery and tracking. Install both packages from reviewed revisions. Publishing connectors and a recurring runner must be configured separately.
 
 The four marketing skills adapt the MIT-licensed [source marketing-skills](https://github.com/graphed-inc/marketing-skills). Their upstream license files are kept in the skill directories. Stimulir is the primary media source: Console image and speech gateways plus ready scoped HybrIE audio and video deployments. Available models depend on the live catalog, grants, and deployment state. A separately installed and authenticated `dreamina-canvas-cli` skill supplements `ugc-video`, `static-ads`, and `tesseract-motion` for Canvas and reference workflows. It is not bundled here. Reference voice cloning is available through a ready, scoped Stimulir Qwen3-TTS native worker, not the public Console TTS route.
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Content"
+  short_description: "Coordinate product content, publishing, and learning"
+  default_prompt: "Use $daily-content to prepare today's coordinated product content from our campaign context, real evidence, and available results."
